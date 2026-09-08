@@ -1,5 +1,7 @@
 # termslides
 
+![演示](view.gif)
+
 ## 快速开始
 
 ```bash

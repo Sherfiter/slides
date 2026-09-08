@@ -1,6 +1,6 @@
 # termslides
 
-终端 Markdown 幻灯片播放器 —— jyy 风格，带「目录 → 章节 → 小节」导航。
+终端 Markdown 幻灯片播放器 —— 带「目录 → 章节 → 小节」导航。
 
 ## 快速开始
 
@@ -13,7 +13,7 @@ python3 slides.py *.slides
 需要真实终端（不能重定向 stdin/stdout）
 macOS / Linux 均可
 
-**每讲一个 `.slides` 文件**（和 jyy 一样）。启动后先看到**目录页**：所有讲的章节与小节两级缩进，`j` / `k` 挑行，回车进入，`Esc` / `t` 随时返回。
+**每讲一个 `.slides` 文件**。启动后先看到**目录页**：所有讲的章节与小节两级缩进，`j` / `k` 挑行，回车进入，`Esc` / `t` 随时返回。
 
 ## 文件格式（md 语法的超集）
 
@@ -37,27 +37,6 @@ macOS / Linux 均可
 
 上色字母：`r` 红 `g` 绿 `y` 黄 `b` 蓝 `m` 品红 `c` 青 `k` 灰 `w` 白。
 
-### 组织示例（每讲一个文件）
-
-当前内容按陈涛主编《虚拟化与容器技术》（清华大学出版社）的 13 章组织：
-
-```
-01-KVM概述.slides          # 第 1 章 · KVM 概述
-02-安装KVM.slides          # 第 2 章 · 安装 KVM
-03-创建KVM虚拟机.slides     # 第 3 章 · 创建 KVM 虚拟机
-04-虚拟机管理.slides        # 第 4 章 · 虚拟机管理
-05-KVM虚拟网络.slides       # 第 5 章 · 管理 KVM 虚拟网络
-06-KVM虚拟存储.slides       # 第 6 章 · 管理 KVM 虚拟存储
-07-容器技术简介.slides       # 第 7 章 · 容器技术简介
-08-Docker镜像管理.slides    # 第 8 章 · Docker 镜像管理
-09-Docker容器管理.slides    # 第 9 章 · Docker 容器管理
-10-Docker网络管理.slides    # 第 10 章 · Docker 网络管理
-11-Docker存储管理.slides    # 第 11 章 · Docker 存储管理
-12-Dockerfile.slides        # 第 12 章 · 使用 Dockerfile 创建镜像
-13-Docker实战案例.slides    # 第 13 章 · Docker 实战案例
-```
-
-每讲内部用 `#` 写章标题、`##` 写小节、`---` 分页。文件名用 `NN-` 前缀保证目录顺序（等价于课程主页的讲次）。
 
 ## 按键
 

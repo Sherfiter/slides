@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""终端 Markdown 幻灯片播放器 —— jyy 风格。
+"""终端 Markdown 幻灯片播放器 —— jyy 风格，带目录导航。
 
-用法:
-    python3 slides.py demo.slides
+用法 (每讲一个文件, 支持多文件):
+    python3 slides.py 01-KVM概述.slides 02-安装KVM.slides
+    python3 slides.py *.slides
+
+启动即进入目录页: 每个文件的 # 是章节(讲)、## 是小节, 两级缩进,
+光标挑行回车进入, 阅读时按 Esc / t 随时返回目录。
 
 格式 (Markdown + 少量扩展, 纯文本, 可直接 git 管理):
+    # 标题          章节 (目录一级, 黄色粗体, 与正文同页)
+    ## 标题         小节 (目录二级, 粗体, 与正文同页)
+    ### 标题        三级标题 (左对齐加粗, 不进目录)
     ---             单独一行: 分页
-    # / ## / ###    一级(居中黄) / 二级(居中) / 三级(左对齐加粗)
     > 引用          引用块 (灰色 + 左侧竖线)
     - / 1.          无序 / 有序列表
     **加粗**  *斜体*  `行内代码`  ~~删除线~~
@@ -14,12 +20,18 @@
     {r}..{/}        显式上色: r红 g绿 y黄 b蓝 m品红 c青 k灰 w白
     ``` 围栏        代码块 (可带语言: ```c)
 
-按键:
+目录模式按键:
+    j / k          上下选择目录项
+    Enter / Tab    进入选中项 (l / → 也可)
+    q              退出
+
+阅读模式按键:
     h / l          光标左右移动
     j / k          光标上下移动
     Tab / Enter    打开光标所在的链接
     ←/→ (方向键)   翻页 (↑/↓ 也可)     空格  下一页
     g / G          首页 / 末页
+    Esc / t        返回目录
     q              退出
 """
 
@@ -189,6 +201,29 @@ def build_grid(lines, width, urls):
     return rows
 
 
+def render_toc(toc, width, cursor_row, top=0, height=None):
+    if height is None:
+        height = len(toc) - top
+    lines = []
+    for i in range(top, min(top + height, len(toc))):
+        level, title, _ = toc[i]
+        indent = "  " * level
+        base = ST_BOLD + "\033[33m" if level == 0 else ST_BOLD
+        segs = parse_inline(title, [], base)
+        cells = [Cell(ch, "", None) for ch in indent] + cells_from_segments(segs)
+        cells = pad_row(cells, width)
+        buf = ["\033[7m"] if i == cursor_row else []
+        prev = None
+        for cell in cells:
+            if cell.style != prev:
+                buf.append(cell.style)
+                prev = cell.style
+            buf.append(cell.ch)
+        buf.append(RESET)
+        lines.append("".join(buf))
+    return "\n".join(lines)
+
+
 def emit_rows(rows, cursor):
     lines = []
     for r, row in enumerate(rows):
@@ -215,12 +250,54 @@ def link_at(rows, cur):
 
 
 def parse(text):
-    pages = []
-    for page in text.split("\n---\n"):
-        lines = page.strip("\n").split("\n")
-        if any(l.strip() for l in lines):
-            pages.append(lines)
-    return pages
+    pages, toc = [], []
+    cur = []
+    in_code = False
+
+    def flush():
+        nonlocal cur
+        while cur and not cur[0].strip():
+            cur.pop(0)
+        while cur and not cur[-1].strip():
+            cur.pop()
+        if cur:
+            pages.append(cur)
+            cur = []
+
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if line.strip().startswith("```"):
+            in_code = not in_code
+            cur.append(line)
+            continue
+        if in_code:
+            cur.append(line)
+            continue
+        if line.strip() == "---":
+            flush()
+            continue
+        m = re.match(r"^(#{1,2})\s+(.*)$", line)
+        if m:
+            flush()
+            level = len(m.group(1)) - 1  # 0 章节 / 1 小节
+            cur.append(line)              # 标题作为当前页第一行, 与正文同页
+            toc.append((level, m.group(2), len(pages)))
+            continue
+        cur.append(line)
+    flush()
+    return pages, toc
+
+
+def load(files):
+    all_pages, all_toc = [], []
+    for path in files:
+        with open(path, encoding="utf-8") as f:
+            pages, toc = parse(f.read())
+        offset = len(all_pages)
+        all_pages.extend(pages)
+        for level, title, idx in toc:
+            all_toc.append((level, title, idx + offset))
+    return all_pages, all_toc
 
 
 def open_url(url):
@@ -236,7 +313,7 @@ def open_url(url):
 def draw_status(pi, n_pages, cur, cur_link, urls):
     t = shutil.get_terminal_size()
     H, W = t.lines, t.columns
-    hints = "   ".join(["h/l 左右", "j/k 上下", "Tab 打开链接", "←/→ 翻页", "q 退出"])
+    hints = "   ".join(["h/l 左右", "j/k 上下", "Tab 链接", "←/→ 翻页", "Esc 目录", "q 退出"])
     if cur_link is not None and 0 <= cur_link < len(urls):
         u = urls[cur_link]
         u = u if len(u) <= 40 else u[:40] + "…"
@@ -244,6 +321,18 @@ def draw_status(pi, n_pages, cur, cur_link, urls):
     else:
         left = f"  [{cur[0] + 1},{cur[1] + 1}]   " + hints
     right = f"{pi + 1}/{n_pages}"
+    pad = W - vwidth(left) - vwidth(right)
+    if pad < 1:
+        pad = 1
+    sys.stdout.write(f"{SAVE}\033[{H};1H\033[2K" + dim(left + " " * pad + right) + RESTORE)
+    sys.stdout.flush()
+
+
+def draw_toc_status(n_toc, toc_cur):
+    t = shutil.get_terminal_size()
+    H, W = t.lines, t.columns
+    left = "  目录 " + f"[{toc_cur + 1}/{n_toc}]   " + "   ".join(["j/k 选择", "回车 进入", "q 退出"])
+    right = "目录"
     pad = W - vwidth(left) - vwidth(right)
     if pad < 1:
         pad = 1
@@ -287,15 +376,18 @@ def main():
         print("错误: 需要在真实终端中运行 (不能重定向 stdin/stdout)")
         sys.exit(1)
 
-    with open(sys.argv[1], encoding="utf-8") as f:
-        pages = parse(f.read())
+    pages, toc = load(sys.argv[1:])
     if not pages:
         print("错误: 没有解析到任何页面")
         sys.exit(1)
 
     n_pages = len(pages)
-    pi = 0
-    cur = [0, 0]            # [行, 单元格]
+    n_toc = len(toc)
+    mode = "toc"            # "toc" 目录 / "view" 阅读
+    pi = 0                  # 全局页索引
+    toc_cur = 0             # 目录光标行
+    toc_top = 0             # 目录可视窗口起始行
+    cur = [0, 0]            # view 模式自由光标 [行, 单元格]
     rows = []
     urls = []
     cur_link = None
@@ -307,7 +399,7 @@ def main():
         cur[0] = max(0, min(cur[0], len(rows) - 1))
         cur[1] = max(0, min(cur[1], len(rows[cur[0]]) - 1))
 
-    def draw():
+    def draw_view():
         nonlocal rows, urls, cur_link
         width = shutil.get_terminal_size().columns
         urls = []
@@ -317,6 +409,22 @@ def main():
         sys.stdout.write(CLEAR)
         sys.stdout.write(emit_rows(rows, tuple(cur)))
         draw_status(pi, n_pages, tuple(cur), cur_link, urls)
+
+    def draw_toc():
+        nonlocal toc_top
+        width = shutil.get_terminal_size().columns
+        height = max(1, shutil.get_terminal_size().lines - 1)
+        if toc_cur < toc_top:
+            toc_top = toc_cur
+        elif toc_cur >= toc_top + height:
+            toc_top = toc_cur - height + 1
+        toc_top = max(0, min(toc_top, max(0, n_toc - height)))
+        sys.stdout.write(CLEAR)
+        sys.stdout.write(render_toc(toc, width, toc_cur, toc_top, height))
+        draw_toc_status(n_toc, toc_cur)
+
+    def draw():
+        draw_toc() if mode == "toc" else draw_view()
 
     resized = [False]
     signal.signal(signal.SIGWINCH, lambda *a: resized.__setitem__(0, True))
@@ -340,43 +448,60 @@ def main():
 
             if key in (b"q", b"\x03"):
                 break
-            if key == b"h":
-                cur[1] -= 1
-                clamp()
-                draw()
-            elif key == b"l":
-                cur[1] += 1
-                clamp()
-                draw()
-            elif key == b"k":
-                cur[0] -= 1
-                clamp()
-                draw()
-            elif key == b"j":
-                cur[0] += 1
-                clamp()
-                draw()
-            elif key in LINK_OPEN:
-                if cur_link is not None and 0 <= cur_link < len(urls):
-                    open_url(urls[cur_link])
-            elif key == b"g":
-                pi = 0
-                cur[:] = [0, 0]
-                draw()
-            elif key == b"G":
-                pi = n_pages - 1
-                cur[:] = [0, 0]
-                draw()
-            elif key in PAGE_NEXT:
-                if pi + 1 < n_pages:
-                    pi += 1
+
+            if mode == "toc":
+                if key == b"j":
+                    toc_cur = min(toc_cur + 1, n_toc - 1)
+                    draw()
+                elif key == b"k":
+                    toc_cur = max(toc_cur - 1, 0)
+                    draw()
+                elif key in (b"\r", b"\n", b"\t", b"l", b"\x1b[C"):
+                    pi = toc[toc_cur][2]
+                    cur[:] = [0, 0]
+                    mode = "view"
+                    draw()
+            else:
+                if key in (b"\x1b", b"t"):
+                    mode = "toc"
+                    draw()
+                elif key == b"h":
+                    cur[1] -= 1
+                    clamp()
+                    draw()
+                elif key == b"l":
+                    cur[1] += 1
+                    clamp()
+                    draw()
+                elif key == b"k":
+                    cur[0] -= 1
+                    clamp()
+                    draw()
+                elif key == b"j":
+                    cur[0] += 1
+                    clamp()
+                    draw()
+                elif key in LINK_OPEN:
+                    if cur_link is not None and 0 <= cur_link < len(urls):
+                        open_url(urls[cur_link])
+                elif key == b"g":
+                    pi = 0
                     cur[:] = [0, 0]
                     draw()
-            elif key in PAGE_PREV:
-                if pi > 0:
-                    pi -= 1
+                elif key == b"G":
+                    pi = n_pages - 1
                     cur[:] = [0, 0]
                     draw()
+                elif key in PAGE_NEXT:
+                    if pi + 1 < n_pages:
+                        pi += 1
+                        cur[:] = [0, 0]
+                        draw()
+                elif key in PAGE_PREV:
+                    if pi > 0:
+                        pi -= 1
+                        cur[:] = [0, 0]
+                        draw()
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
         sys.stdout.write(RESET + "\033[0m\n")

@@ -1,0 +1,44 @@
+# 第 13 章 · Docker 实战案例
+
+## 13.1 Linux 系统镜像
+
+```bash
+docker run -it --name u ubuntu:22.04 bash   # 交互式进入 Ubuntu
+docker run -it --name c centos:stream9 bash # CentOS
+```
+
+系统镜像适合做测试、学习与构建基础环境。
+
+---
+
+## 13.2 Web 服务：Nginx / Apache
+
+```bash
+# Nginx：把本地目录挂为站点
+docker run -d --name web -p 8080:80 \
+  -v /opt/html:/usr/share/nginx/html nginx
+
+# Apache httpd
+docker run -d --name httpd -p 8081:80 httpd
+```
+
+访问 `http://localhost:8080` 即可看到页面。
+
+---
+
+## 13.3 数据库：MySQL / MongoDB
+
+```bash
+# MySQL：挂卷持久化 + 设 root 密码
+docker run -d --name mysql \
+  -e MYSQL_ROOT_PASSWORD=123456 \
+  -v mysql-data:/var/lib/mysql \
+  -p 3306:3306 mysql:8
+
+# MongoDB
+docker run -d --name mongo \
+  -v mongo-data:/data/db \
+  -p 27017:27017 mongo
+```
+
+> 生产数据务必用卷挂载，否则容器一删数据就没了。

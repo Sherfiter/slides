@@ -1,0 +1,64 @@
+# 第 2 章 · 安装 KVM
+
+## 2.1 KVM 架构解析
+
+KVM 由两部分组成：
+
+- **KVM 内核模块**：负责 CPU 与内存的虚拟化，`/dev/kvm` 是入口
+- **QEMU 用户态工具**：负责 I/O 设备模拟、guest 启动与生命周期
+
+```
+  ┌─────────────── Guest VM ───────────────┐
+  │  Guest OS  ── QEMU (用户态, 设备模拟)   │
+  └───────────────┬────────────────────────┘
+                  │ ioctl(/dev/kvm)
+        ┌─────────▼─────────┐
+        │  KVM 内核模块      │
+        └─────────┬─────────┘
+                  ▼  VT-x / AMD-V
+                 硬件
+```
+
+---
+
+## 2.2 环境准备
+
+安装前先确认 CPU 支持硬件虚拟化：
+
+```bash
+# 大于 0 即表示支持
+grep -cE 'vmx|svm' /proc/cpuinfo
+```
+
+```bash
+# 安装 KVM 与相关工具
+dnf install -y qemu-kvm libvirt virt-install virt-manager
+```
+
+```bash
+# 启动并设为开机自启
+systemctl enable --now libvirtd
+```
+
+---
+
+## 2.3 验证安装
+
+```bash
+# 能看到 /dev/kvm 即成功
+ls -l /dev/kvm
+
+# 检查虚拟化支持
+virt-host-validate
+```
+
+---
+
+## 2.4 KVM 管理工具
+
+| 工具 | 作用 |
+| --- | --- |
+| `libvirt` | 统一的虚拟化 API / 守护进程 |
+| `virsh` | libvirt 的命令行工具 |
+| `virt-manager` | 图形化管理界面 |
+| `virt-viewer` | 查看虚拟机控制台 |

@@ -1,0 +1,37 @@
+# 第 12 章 · 使用 Dockerfile 创建镜像
+
+## 12.1 Dockerfile 是什么
+
+Dockerfile 是一份**声明式构建脚本**，描述镜像如何一层层构建出来：
+
+```dockerfile
+FROM nginx:latest            # 基础镜像
+COPY index.html /usr/share/nginx/html/   # 复制文件
+EXPOSE 80                    # 声明端口
+CMD ["nginx", "-g", "daemon off;"]       # 启动命令
+```
+
+---
+
+## 12.2 常用指令
+
+| 指令 | 作用 |
+| --- | --- |
+| `FROM` | 指定基础镜像 |
+| `RUN` | 构建时执行命令（装依赖） |
+| `COPY` / `ADD` | 复制文件进镜像 |
+| `WORKDIR` | 设置工作目录 |
+| `ENV` | 设置环境变量 |
+| `EXPOSE` | 声明端口 |
+| `CMD` / `ENTRYPOINT` | 容器启动时执行的命令 |
+
+---
+
+## 12.3 构建镜像
+
+```bash
+docker build -t myweb:v1 .        # 用当前目录的 Dockerfile 构建
+docker run -d -p 80:80 myweb:v1   # 运行
+```
+
+> 每条指令生成一层，所以把「不常变的」放前面，能更好地复用构建缓存。

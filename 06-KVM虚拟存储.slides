@@ -1,0 +1,40 @@
+# 第 6 章 · 管理 KVM 虚拟存储
+
+## 6.1 存储资源：存储池与存储卷
+
+libvirt 用两级抽象管理存储：
+
+- **存储池（pool）**：一类存储来源，如目录、LVM、NFS、iSCSI
+- **存储卷（volume）**：池里的一个单位，通常是虚拟机磁盘镜像
+
+```
+  存储池 (pool)
+   ├─ 卷 volume (demo.qcow2)
+   └─ 卷 volume (web.qcow2)
+```
+
+---
+
+## 6.2 存储池管理
+
+```bash
+virsh pool-list --all          # 列出存储池
+virsh pool-define-as dir mypool /var/lib/libvirt/mypool
+virsh pool-build mypool        # 构建
+virsh pool-start mypool        # 启动
+virsh pool-autostart mypool    # 开机自启
+```
+
+---
+
+## 6.3 存储卷管理
+
+```bash
+# 在池里创建一个 10G 的 qcow2 卷
+virsh vol-create-as mypool demo.qcow2 10G --format qcow2
+
+virsh vol-list mypool          # 列出卷
+virsh vol-delete demo.qcow2 --pool mypool   # 删除卷
+```
+
+> 常用磁盘格式：`qcow2`（支持快照、稀疏、COW，KVM 主流）、`raw`（简单直写）。

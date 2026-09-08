@@ -1,0 +1,46 @@
+# 第 3 章 · 创建 KVM 虚拟机
+
+## 3.1 用 virt-manager 图形化创建
+
+`virt-manager` 提供图形向导：新建虚拟机 → 选 ISO → 分配 CPU/内存/磁盘 → 完成。
+
+适合新手与快速验证；批量与自动化则用命令行。
+
+---
+
+## 3.2 用 virt-install 命令创建
+
+```bash
+virt-install \
+  --name demo \
+  --memory 2048 \
+  --vcpus 2 \
+  --disk size=20 \
+  --cdrom /path/to/CentOS.iso \
+  --os-variant centos-stream9 \
+  --network network=default \
+  --graphics vnc
+```
+
+常用参数：
+
+- `--name` 虚拟机名，`--memory`/`--vcpus` 内存与 CPU
+- `--disk` 磁盘（`size=` 新建，`path=` 用现有镜像）
+- `--cdrom` / `--location` 安装源
+- `--network` 网络，`--graphics` 显示方式（vnc / spice）
+
+---
+
+## 3.3 用 VNC 连接虚拟机
+
+`--graphics vnc` 创建的虚拟机通过 VNC 访问控制台：
+
+```bash
+# 查看 VNC 端口
+virsh vncdisplay demo
+
+# 本地用 virt-viewer，远程用 VNC 客户端连 宿主机:5900
+virt-viewer demo
+```
+
+> VNC 提供虚拟机的图形控制台，`virt-viewer` 是更方便的本地客户端。

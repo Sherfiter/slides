@@ -1,0 +1,33 @@
+# 第 4 章 · 虚拟机管理
+
+## 4.1 libvirt 架构
+
+**libvirt** 是一套管理虚拟化平台的统一 API：
+
+- 守护进程 `libvirtd` 常驻后台
+- 对上层提供稳定接口，对下层适配 KVM / Xen / QEMU 等
+- `virsh`、`virt-manager` 都通过它管理虚拟机
+
+```
+  virsh / virt-manager / virt-viewer
+              │
+        libvirtd (libvirt API)
+              │
+      QEMU ── KVM ── 硬件
+```
+
+---
+
+## 4.2 virsh 管理虚拟机生命周期
+
+```bash
+virsh list --all              # 列出所有虚拟机
+virsh start demo              # 启动
+virsh shutdown demo           # 正常关机
+virsh destroy demo            # 强制断电
+virsh suspend / resume demo   # 暂停 / 恢复
+virsh reboot demo             # 重启
+virsh undefine demo           # 删除定义（配合 --remove-all-storage 删磁盘）
+```
+
+> `shutdown` 是优雅关机（发信号），`destroy` 是强制断电（相当于拔电源）。

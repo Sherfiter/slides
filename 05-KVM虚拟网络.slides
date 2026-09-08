@@ -1,0 +1,56 @@
+# 第 5 章 · 管理 KVM 虚拟网络
+
+## 5.1 网络模式总览
+
+libvirt 提供三种虚拟网络，隔离程度与对外连通性各不相同：
+
+| 模式 | 连通性 | 用途 |
+| --- | --- | --- |
+| 隔离网络 | 仅虚拟机之间互通 | 完全内网 |
+| NAT 网络 | 虚拟机可出网，外部不可入 | 默认（virbr0） |
+| 桥接网络 | 虚拟机等同于局域网主机 | 对外服务 |
+
+---
+
+## 5.2 隔离网络
+
+隔离网络里的虚拟机只能彼此通信，与宿主机、外部网络完全隔离。
+
+```bash
+# 定义并启动一个隔离网络
+cat > iso.xml <<'EOF'
+<network>
+  <name>iso</name>
+</network>
+EOF
+virsh net-define iso.xml
+virsh net-start iso
+virsh net-autostart iso
+```
+
+---
+
+## 5.3 NAT 网络（默认）
+
+默认的 `default` 网络就是 NAT：虚拟机通过宿主机 `virbr0` 桥出网，
+由 iptables 做地址转换，外部无法直接访问进来。
+
+```bash
+virsh net-list --all     # 查看网络，default 默认存在
+virsh net-info default   # 查看 virbr0 网段、DHCP
+```
+
+---
+
+## 5.4 桥接网络
+
+桥接让虚拟机直接连到物理局域网，获得同网段 IP：
+
+```bash
+# 在宿主机创建网桥 br0，并把物理网卡加入
+nmcli connection add type bridge ifname br0
+nmcli connection add type ethernet slave-type bridge \
+      con-name br0-port ifname enp1s0 master br0
+```
+
+> 桥接适合对外提供服务；NAT 适合虚拟机需要上网但无需被外部访问。

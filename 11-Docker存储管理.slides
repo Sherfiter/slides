@@ -1,0 +1,36 @@
+# 第 11 章 · Docker 存储管理
+
+## 11.1 容器数据的去向
+
+容器层是**可写但易失**的：容器删除，其中的改动就没了。
+要持久化数据，用挂载：
+
+- **数据卷（volume）**：由 Docker 管理，最推荐
+- **绑定挂载（bind mount）**：挂载宿主机任意目录
+- **tmpfs**：只存内存，容器停止即消失
+
+---
+
+## 11.2 数据卷 volume
+
+```bash
+docker volume create mydata         # 创建卷
+docker run -d -v mydata:/var/lib/mysql mysql
+
+docker volume ls                    # 查看卷
+docker volume inspect mydata        # 查看卷的挂载路径
+docker volume rm mydata             # 删除卷
+```
+
+> 卷由 Docker 托管、可备份迁移，是持久化数据的首选。
+
+---
+
+## 11.3 绑定挂载
+
+```bash
+# 把宿主机目录挂进容器（-v 宿主机:容器）
+docker run -d -v /opt/html:/usr/share/nginx/html nginx
+```
+
+适合开发时把源码目录实时挂进容器；缺点是强绑定宿主机路径。

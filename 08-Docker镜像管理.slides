@@ -1,0 +1,47 @@
+# 第 8 章 · Docker 镜像管理
+
+## 8.1 Docker 架构
+
+Docker 是 C/S 架构：
+
+```
+  docker CLI (客户端)
+       │  REST
+  dockerd (守护进程)
+       │
+  containerd ── runc (真正创建容器)
+```
+
+- **镜像（image）**：只读的模板
+- **容器（container）**：镜像的运行实例
+- **仓库（registry）**：存放镜像的地方（Docker Hub）
+
+---
+
+## 8.2 镜像的分层结构
+
+镜像由多个**只读层**叠加（overlayfs），改动只加新层：
+
+```
+  可写层（容器层）
+  ├─ 应用层  COPY app
+  ├─ 依赖层  RUN pip install
+  └─ 基础层  FROM ubuntu
+```
+
+分层让镜像共享、复用，所以体积小、下载快。
+
+---
+
+## 8.3 镜像常用命令
+
+```bash
+docker pull nginx:latest      # 拉取镜像
+docker images                 # 查看本地镜像
+docker search nginx           # 搜索镜像
+docker tag nginx mynginx:v1   # 打标签
+docker rmi mynginx:v1         # 删除镜像
+docker push myrepo/mynginx:v1 # 推送到仓库
+```
+
+> 镜像名格式：`仓库/名称:标签`，标签默认 `latest`。

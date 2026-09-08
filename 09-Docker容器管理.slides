@@ -1,0 +1,32 @@
+# 第 9 章 · Docker 容器管理
+
+## 9.1 容器与镜像的关系
+
+镜像（image）是只读模板，容器（container）是镜像的**运行实例**：
+
+```
+docker run nginx  ──▶  容器（镜像 + 可写层 + 进程）
+```
+
+同一个镜像可以启动多个互相隔离的容器。
+
+---
+
+## 9.2 容器的生命周期命令
+
+```bash
+docker run -d --name web -p 80:80 nginx   # 创建并后台运行
+docker ps -a                              # 查看容器（含已停止）
+docker start / stop / restart web         # 启动 / 停止 / 重启
+docker rm web                             # 删除容器
+```
+
+```bash
+# 进入容器执行命令
+docker exec -it web bash
+# 查看日志 / 详细信息
+docker logs web
+docker inspect web
+```
+
+> `docker run` 会自动先 `pull` 镜像；`-d` 后台运行，`-it` 交互式。

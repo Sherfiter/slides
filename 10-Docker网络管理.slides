@@ -1,0 +1,44 @@
+# 第 10 章 · Docker 网络管理
+
+## 10.1 容器如何联网：veth + bridge
+
+Docker 用一对 **veth** 虚拟网卡，一端在容器、一端在宿主机网桥，
+把容器连到 `docker0` 桥，再经 NAT 出网：
+
+```
+  容器 A ── veth ──┐
+  容器 B ── veth ──┼── docker0 网桥 ── NAT ── 外部网络
+                    │
+                    └─ (宿主机网络栈)
+```
+
+---
+
+## 10.2 默认网络类型
+
+| 类型 | 说明 |
+| --- | --- |
+| `bridge` | 默认，容器通过 docker0 桥 + NAT 出网 |
+| `host` | 直接用宿主机网络栈，无隔离但最快 |
+| `none` | 无网络，完全手动配置 |
+
+```bash
+docker network ls                 # 查看网络
+docker run -d --network host nginx
+```
+
+---
+
+## 10.3 端口映射与容器互联
+
+```bash
+# -p 宿主机端口:容器端口
+docker run -d -p 8080:80 nginx
+
+# 自定义网络，容器间用名字互访
+docker network create mynet
+docker run -d --network mynet --name web nginx
+docker run -d --network mynet --name app busybox
+```
+
+> 同一自定义网络里的容器可直接用容器名互相访问。

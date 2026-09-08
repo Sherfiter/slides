@@ -9,7 +9,7 @@ python3 slides.py demo.slides
 需要真实终端（不能重定向 stdin/stdout）
 macOS / Linux 均可
 
-## 文件格式
+## 文件格式（md语法的超集）
 
 `.slides` 是 Markdown + 少量扩展，纯文本、可直接 git 管理。`---` 单独一行分页。
 
@@ -35,7 +35,7 @@ macOS / Linux 均可
 | 按键 | 动作 |
 | --- | --- |
 | `h` / `l` | 光标左右移动 |
-| `j` / `k` | 光标上下移动 |
+| `j` / `k` | 光标上下移动 | vim按键
 | `Tab` / `Enter` | 打开光标所在的链接 |
 | `←` / `→`（`↑` / `↓`） | 翻页 |
 | 空格 | 下一页 |

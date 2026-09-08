@@ -1,14 +1,13 @@
 # termslides
 
-一个终端 Markdown 幻灯片播放器（jyy 风格）。用纯文本 `.slides` 文件写幻灯片，在终端里全屏渲染、自由移动光标、直接打开链接。
-
 ## 快速开始
 
 ```bash
 python3 slides.py demo.slides
 ```
 
-需要真实终端（不能重定向 stdin/stdout）。macOS / Linux 均可。
+需要真实终端（不能重定向 stdin/stdout）
+macOS / Linux 均可
 
 ## 文件格式
 
@@ -44,22 +43,3 @@ python3 slides.py demo.slides
 | `q` | 退出 |
 
 光标是一格一格自由移动的，反显高亮当前所在格；只有停在链接文字上时，`Tab` 才会打开它。
-
-## 示例
-
-```markdown
-# 我的演示
-
-## 一句话
-
-操作系统是 **硬件与软件之间的抽象层**。
-
-- 进程/线程 —— CPU 的抽象
-- 地址空间 —— 内存的抽象
-
----
-
-# 参考资料
-
-- 主页：[jyywiki](https://jyywiki.cn/)
-```

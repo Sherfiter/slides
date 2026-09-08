@@ -1,0 +1,175 @@
+# 第 0 章 · Linux 基础（与 Windows 对比）
+
+这一讲补一点 Linux 入门概念：内核、发行版、桌面、装软件、权限与用户，全部拿 Windows 作类比。
+
+## 0.1 Linux 内核（kernel）
+
+Windows 开机背后也有一个内核（`ntoskrnl.exe`），只是用户从来看不到；Linux 也一样。
+
+严格说，**Linux 只是那个内核**，不是一套完整的系统。
+
+内核负责最底层的事：
+
+- **进程 / 内存**：调度程序、分配内存
+- **设备驱动**：让 CPU、硬盘、网卡跑起来
+- **文件系统**：把数据组织成文件
+- **系统调用**：给上层程序提供的唯一入口
+
+```
+uname -r      # 查看内核版本，如 6.12.0-xxx
+```
+
+**「GNU/Linux」才完整**：内核 + GNU 工具链（`bash`、`gcc`、`coreutils`）
++ 各种软件，拼起来才是一个能用的操作系统。
+
+**类比 Windows**：内核 ≈ 汽车的发动机，藏在引擎盖下；
+Linux 内核 = Windows 的 NT 内核。你平时用的命令、图形界面，
+都是「整车」的一部分，不在内核里。
+
+---
+
+## 0.2 Linux 发行版（distribution）
+
+Windows 只有微软一家在做，就 Home / Pro 几个版本。
+
+Linux 的**发行版** = 内核 + 软件集合 + 包管理器 + 桌面，打包成的完整系统，
+由不同团队维护，所以有几十上百种：
+
+```
+Debian 系   Ubuntu / Debian          apt       最普及，新手首选 Ubuntu
+RedHat 系   RHEL / CentOS / Fedora   yum/dnf   企业服务器主流
+Arch 系     Arch / Manjaro           pacman    滚动更新，爱折腾
+其他        openSUSE(zypper) / Gentoo(源码编译)
+```
+
+选型建议：
+
+- 新手入门 → **Ubuntu**（资料最多、最省心）
+- 企业服务器 → **Rocky / RHEL**（稳定、有商业支持）
+- 喜欢折腾 → **Arch**（文档全，什么都要自己配）
+
+**类比 Windows**：内核 = 同一台发动机；
+发行版 = 不同车厂拿这台发动机造出的不同车型——
+发动机一样，外壳、内饰、配置不同。
+
+---
+
+## 0.3 桌面环境（DE）
+
+Windows 的桌面、任务栏、开始菜单是**内置的一套**，不能换。
+
+Linux 的图形界面和系统是**分离**的，叫**桌面环境（Desktop Environment）**，
+可以整套换，也可以干脆不装：
+
+- **GNOME**：Ubuntu 默认，简洁现代，偏触屏风格
+- **KDE Plasma**：华丽、可定制项极多，长得像 Windows 但更自由
+- **XFCE**：轻量省资源，老机器 / 虚拟机首选
+- 其它：Cinnamon、MATE、LXQt……
+
+服务器通常**只装命令行、不装桌面**，省资源也更安全。
+
+**类比 Windows**：Windows 桌面 ≈ 只能换换「皮肤」；
+Linux 桌面 ≈ 可以整套换成另一个环境，甚至完全不用图形界面。
+
+---
+
+## 0.4 软件包管理器
+
+Windows 装软件：去官网下载 `.exe` / `.msi` → 双击 → 一路「下一步」，
+装完还得自己惦记着更新、卸载，依赖库要么重复打包要么缺失。
+
+Linux 用**包管理器**统一打理：一条命令搞定装、卸、升、查。
+
+- **包（package）**：编译好的程序 + 元数据（版本、依赖、描述）
+- **仓库（repository）**：集中存放包的「软件源」，从网络拉取
+- **依赖（dependency）**：装 A 会自动带上 A 需要的 B、C
+
+两大派系：
+
+```
+Debian 系（Ubuntu / Debian）   底层 dpkg    上层 apt
+RedHat 系（CentOS / Fedora）   底层 rpm     上层 yum / dnf
+```
+
+```
+# Debian 系
+sudo apt update            # 刷新软件源索引
+sudo apt install nginx     # 装包，自动解依赖
+sudo apt remove  nginx     # 卸载
+sudo apt upgrade           # 升级所有包
+
+# RedHat 系
+sudo dnf install nginx
+```
+
+**类比 Windows**：Linux 包管理器 ≈ 微软商店 / 手机应用商店——
+软件都从统一来源来，版本、依赖、卸载全由它兜底。
+Windows 的 `winget`、`choco`、`scoop` 就是在补这块历史短板。
+
+---
+
+## 0.5 文件权限
+
+Windows：右键 → 属性 → 安全，给每个用户/组勾「读取 / 写入 / 完全控制」，
+还附带一个「只读」属性。
+
+Linux 更简单：每个文件固定分**三种人** × **三种权限**，一视同仁。
+
+- 三种人：**属主 u**（owner）、**属组 g**（group）、**其他 o**（other）
+- 三种权限：**r** 读(4)　**w** 写(2)　**x** 执行(1)
+
+`ls -l` 第一串就是权限：
+
+```
+-rwxr-xr--  1 alice devs  run.sh
+ │   │   │
+ │   │   └─ 其他 o：r--  只读
+ │   └───── 属组 g：r-x  读 + 执行
+ └───────── 属主 u：rwx  读 + 写 + 执行
+```
+
+改权限用 `chmod`、换属主用 `chown`：
+
+```
+chmod 755 run.sh      # u=rwx  g=r-x  o=r-x
+chmod u+x run.sh      # 只给属主加执行位
+chown bob  run.sh     # 换属主
+```
+
+**类比 Windows**：Linux 是「属主 / 属组 / 其他」三档粗粒度，胜在简单；
+Windows NTFS 是 ACL 列表，能精确到任意用户、还支持继承，但更繁琐。
+Linux「读 ≈ Windows 读取」，「写 ≈ 修改」，「执行 ≈ 能直接运行」。
+
+---
+
+## 0.6 用户与用户组
+
+Windows：控制面板 → 用户账户；内置组 `Administrators`、`Users`；
+装软件会弹 UAC，需要「以管理员身份运行」。
+
+Linux 同样有**用户**和**组**，只是藏在文本文件里（一切皆文件）：
+
+- **用户**：每个用户一个 UID，`root` 的 UID 恒为 0（超级管理员）
+- **组**：每个组一个 GID，一个用户可以同时属于多个组
+- **root ≈ Windows 的 Administrator**，拥有最高权限
+
+```
+cat /etc/passwd    # 用户列表
+cat /etc/group     # 组列表
+id alice           # 查看 alice 的 uid/gid 及所属组
+```
+
+管理命令：
+
+```
+sudo useradd bob             # 新建用户
+sudo usermod -aG sudo bob    # 把 bob 加进 sudo 组（获得管理员能力）
+sudo groupadd devs           # 新建组
+```
+
+**类比 Windows**：
+
+- `root` / `sudo` ≈ `Administrator` + UAC「以管理员身份运行」
+- Linux 组 ≈ Windows 用户组（`Users`、`Administrators`）
+- 区别：Windows 用「域 / Active Directory」管企业多台机器，
+  Linux 靠本地文本文件 `passwd`、`group` 完成同样的事
